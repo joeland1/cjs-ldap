@@ -1,0 +1,6 @@
+{
+  "name": "c+js LDAP",
+  "dependencies": {
+    "node-addon-api": "^8.0.0"
+  }
+}
