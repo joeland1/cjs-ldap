@@ -16,7 +16,7 @@ AsyncBindWorker::AsyncBindWorker(const Napi::Env& env, LDAP* ld, struct berval* 
 {}
 
 AsyncBindWorker::~AsyncBindWorker(){
-
+    ber_bvfree(this->my_creds);
 }
 
 Napi::Promise AsyncBindWorker::getPromise(){

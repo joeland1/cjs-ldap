@@ -26,7 +26,7 @@ async function doSomething() {
 
 (async () => {
   const foo = await doSomething();
-  const x = await fetch("http://localhost:8080");
+  const x = await fetch("http://localhost:8080"); //just to force garbage collector to cleanup the ldap obj 
   const j = await x.json();
   console.log(j);
 })();
