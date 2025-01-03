@@ -3,3 +3,5 @@
 ldap-async-addon/addon.node
 ldap-lib/*
 openldap/*
+node_modules
+package-lock.json

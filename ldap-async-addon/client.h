@@ -1,4 +1,4 @@
-#include "napi.h"
+#include <napi.h>
 
 extern "C" {
     #include <ldap.h>
@@ -32,5 +32,7 @@ class LDAP_Client : public Napi::ObjectWrap<LDAP_Client> {
   private:
     LDAPURLDesc client_settings;
     LDAP* client;
+    Napi::Value exec(const Napi::CallbackInfo& info);
     Napi::Value bind(const Napi::CallbackInfo& info);
+    const std::string dn;
 };

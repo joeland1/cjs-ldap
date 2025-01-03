@@ -1,4 +1,3 @@
-#include "client.h"
 #include <napi.h>
 extern "C" {
     #include <ldap.h>
@@ -7,6 +6,9 @@ extern "C" {
 #include <vector>
 #include <unordered_map>
 #include <variant>
+
+#include "client.h"
+#include "async-bind-ldap.h"
 
 LDAPURLDesc get_default_lud(){
     return {
@@ -26,6 +28,7 @@ LDAPURLDesc get_default_lud(){
 Napi::Object LDAP_Client::Init(Napi::Env env, Napi::Object exports) {
     // This method is used to hook the accessor and method callbacks
     Napi::Function func = DefineClass(env, "LDAP", {
+        InstanceMethod<&LDAP_Client::exec>("exec", static_cast<napi_property_attributes>(napi_writable | napi_configurable)),
         InstanceMethod<&LDAP_Client::bind>("bind", static_cast<napi_property_attributes>(napi_writable | napi_configurable)),
     });
 
@@ -51,45 +54,53 @@ Napi::Object LDAP_Client::Init(Napi::Env env, Napi::Object exports) {
 }
 
 LDAP_Client::LDAP_Client(const Napi::CallbackInfo& info) : Napi::ObjectWrap<LDAP_Client>(info),
-    client_settings{get_default_lud()}
+    client_settings{get_default_lud()},
+    dn{info[0].As<Napi::Object>().Get("dn").ToString().Utf8Value()}
 {
     Napi::Env env = info.Env();
 
     Napi::Object config_params = info[0].As<Napi::Object>();
 
-    std::string hostname = config_params.Get("host").ToString().Utf8Value();
-    //size_t hostname_string_length = hostname.length();
-
-    this->client_settings.lud_host = strdup(hostname.c_str());
-    this->client_settings.lud_port = config_params.Get("port").As<Napi::Number>().Uint32Value();
-
     std::string uri = config_params.Get("uri").ToString().Utf8Value();
 
     int status = ldap_initialize(&(this->client),uri.c_str());
 
+    int ldap_version = LDAP_VERSION3;
+    ldap_set_option(this->client, LDAP_OPT_PROTOCOL_VERSION, &ldap_version);
+
     printf("called constructor\n");
 }
 
+
+Napi::Value LDAP_Client::bind(const Napi::CallbackInfo& info){
+    Napi::Env env = info.Env();
+    Napi::Object bind_params = info[0].As<Napi::Object>();
+
+    std::string dn = bind_params.Get("dn").ToString().Utf8Value();
+    std::string pw = bind_params.Get("password").ToString().Utf8Value();
+
+    struct berval cred;
+
+    cred.bv_val = pw.data();
+    cred.bv_len = strlen(cred.bv_val);
+
+    //ldap_sasl_bind_s(this->client,dn.c_str(),LDAP_SASL_SIMPLE,&cred, NULL, NULL,&servercreds);
+    AsyncBindWorker* worker = new AsyncBindWorker(env, this->client,&cred, dn);
+
+    worker->Queue();
+    return worker->getPromise();
+}
+
 LDAP_Client::~LDAP_Client() {
-    free(this->client_settings.lud_host);
     ldap_unbind_ext(this->client,NULL,NULL);
     printf("deconstructor called for ldap\n");
 }
 
-Napi::Value LDAP_Client::bind(const Napi::CallbackInfo& info){
+Napi::Value LDAP_Client::exec(const Napi::CallbackInfo& info){
     Napi::Env env = info.Env();
-    printf("host = %s:%d\n",this->client_settings.lud_host,this->client_settings.lud_port);
     
-    struct berval cred;
-    cred.bv_val = "adminpassword";  // The password is used as the credential for binding
-    cred.bv_len = strlen(cred.bv_val);  // The length of the password string
 
     int output_int = 0;
-    int  ldap_version = LDAP_VERSION3;
-
-    struct berval *servercreds = NULL;
-    int status1 = ldap_set_option(this->client, LDAP_OPT_PROTOCOL_VERSION, &ldap_version);
-    int status2 = ldap_sasl_bind_s(this->client,"cn=admin,dc=example,dc=org",LDAP_SASL_SIMPLE,&cred, NULL, NULL,&servercreds);
 
     int  scope = LDAP_SCOPE_SUBTREE;
     char* filter = "(|(uid=user01)(uid=user02))";

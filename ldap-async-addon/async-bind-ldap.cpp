@@ -1,34 +1,50 @@
-#include "napi.h"
+#include <napi.h>
+#include <ldap.h>
 
-
+#include "async-bind-ldap.h"
 /*
 int ldap_sasl_bind(LDAP *ld, const char *dn, const char *mechanism,
        struct berval *cred, LDAPControl *sctrls[],
        LDAPControl *cctrls[], int *msgidp);
 */
 
-LDAP_bind_worker::LDAP_bind_worker(const Napi::Env& env, LDAP* ld, struct berval *cred, int *msgidp): Napi::AsyncWorker(env),
-    m_deferred(Napi::Deferred::New(env)),
-    target_ldap_client{ldap}
+AsyncBindWorker::AsyncBindWorker(const Napi::Env& env, LDAP* ld, struct berval* cred, std::string dn): Napi::AsyncWorker(env),
+    m_deferred(Napi::Promise::Deferred::New(env)),
+    target_ldap_client{ld},
+    my_creds{ber_dupbv(NULL, cred)},
+    dn{dn}
 {}
 
+AsyncBindWorker::~AsyncBindWorker(){
 
-Napi::Promise::Deferred getPromise(){
-    return m_deferred.Promise();
 }
 
-void LDAP_bind_worker::OnOK(){
-    m_deferred.Resolve();
+Napi::Promise AsyncBindWorker::getPromise(){
+    return this->m_deferred.Promise();
 }
 
-void LDAP_bind_worker::OnError(const Napi::Error& err){
-    m_deferred.Reject(err.Value());
+
+void AsyncBindWorker::OnOK(){
+    this->m_deferred.Resolve(Napi::Number::New(this->Env(),LDAP_SUCCESS));
 }
 
-void LDAP_bind_worker::Execute(){
-    int ldap_status = ldap_simple_bind_s(this->target_ldap_client)
+void AsyncBindWorker::OnError(const Napi::Error& err){
+    this->m_deferred.Reject(err.Value());
+}
+
+void AsyncBindWorker::Execute(){
+    printf("start bind async worker\n");
+
+    struct berval* servercreds = NULL;
+    printf("pw = %s\n",this->my_creds->bv_val);
+    printf("dn = %s\n",this->dn.c_str());
+    int ldap_status = ldap_sasl_bind_s(this->target_ldap_client,this->dn.c_str(),LDAP_SASL_SIMPLE,this->my_creds, NULL, NULL,&servercreds);
+
+    printf("end bind async worker\n");
+    printf("error %s\n",ldap_err2string(ldap_status));
     if (ldap_status != LDAP_SUCCESS){
-        SetError(ldap_status);
+        printf("ldap error\n");
+        this->SetError("ldap error");
         return;
     }
 }
