@@ -6,7 +6,7 @@ const { LDAP } = require("./ldap-async-addon");
 
 async function doSomething() {
     const ldap_config = {
-        uri: "ldap://127.0.0.1:1389",
+        uri: "ldaps://localhost:1636",
         dn: "cn=admin,dc=example,dc=org",
     }
     const c = new LDAP(ldap_config)

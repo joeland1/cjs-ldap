@@ -66,8 +66,13 @@ LDAP_Client::LDAP_Client(const Napi::CallbackInfo& info) : Napi::ObjectWrap<LDAP
     int status = ldap_initialize(&(this->client),uri.c_str());
 
     int ldap_version = LDAP_VERSION3;
+    int tls_check = LDAP_OPT_X_TLS_ALLOW;
     ldap_set_option(this->client, LDAP_OPT_PROTOCOL_VERSION, &ldap_version);
-
+    ldap_set_option(this->client, LDAP_OPT_X_TLS_REQUIRE_CERT, &tls_check);
+    //ldap_set_option(this->client,LDAP_OPT_X_TLS_CACERTFILE, "/code/ldap-certs/myCA.crt");
+    //ldap_set_option(this->client,LDAP_OPT_X_TLS_CERTFILE, "/code/ldap-certs/ldap.crt");
+    //ldap_set_option(this->client,LDAP_OPT_X_TLS_KEYFILE, "/code/ldap-certs/ldap.key");
+    
     printf("called constructor\n");
 }
 

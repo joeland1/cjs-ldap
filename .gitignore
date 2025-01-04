@@ -5,3 +5,6 @@ ldap-lib/*
 openldap/*
 node_modules
 package-lock.json
+openssl-lib
+openssl-openssl-3.4.0
+ldap-lib-no-ssl
