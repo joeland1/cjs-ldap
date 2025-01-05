@@ -4,6 +4,7 @@ extern "C" {
     #include <ldap.h>
 }
 
+
 /*
 class LDAP_client : public Napi::AsyncWorker, public Napi::ObjectWrap<LDAP_client> {
     public:
@@ -34,5 +35,6 @@ class LDAP_Client : public Napi::ObjectWrap<LDAP_Client> {
     LDAP* client;
     Napi::Value exec(const Napi::CallbackInfo& info);
     Napi::Value bind(const Napi::CallbackInfo& info);
+    Napi::Value search(const Napi::CallbackInfo& info);
     const std::string dn;
 };

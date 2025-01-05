@@ -15,12 +15,17 @@ async function doSomething() {
         dn: "cn=admin,dc=example,dc=org",
         password: "adminpassword"
     }
-    let x = c.bind(bind_config);
-    console.log(x)
-    x = await x;
-    console.log(x === 0)
-    //const x = c.exec()
-    //console.log(x)
+    await c.bind(bind_config);
+
+    const search_params = {
+        filter: "(|(uid=user01)(uid=user02))",
+        scope: 2,
+        base: "dc=example,dc=org"
+    }
+
+    const search_result = await c.search(search_params);
+    console.log('search result = ',search_result);
+
     return true
 }
 

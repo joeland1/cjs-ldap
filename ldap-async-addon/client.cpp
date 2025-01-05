@@ -9,6 +9,7 @@ extern "C" {
 
 #include "client.h"
 #include "async-bind-ldap.h"
+#include "async-ldap-search.h"
 
 LDAPURLDesc get_default_lud(){
     return {
@@ -30,6 +31,7 @@ Napi::Object LDAP_Client::Init(Napi::Env env, Napi::Object exports) {
     Napi::Function func = DefineClass(env, "LDAP", {
         InstanceMethod<&LDAP_Client::exec>("exec", static_cast<napi_property_attributes>(napi_writable | napi_configurable)),
         InstanceMethod<&LDAP_Client::bind>("bind", static_cast<napi_property_attributes>(napi_writable | napi_configurable)),
+        InstanceMethod<&LDAP_Client::search>("search", static_cast<napi_property_attributes>(napi_writable | napi_configurable)),
     });
 
     Napi::FunctionReference* constructor = new Napi::FunctionReference();
@@ -96,6 +98,21 @@ Napi::Value LDAP_Client::bind(const Napi::CallbackInfo& info){
     return worker->getPromise();
 }
 
+Napi::Value LDAP_Client::search(const Napi::CallbackInfo& info){
+    Napi::Env env = info.Env();
+    Napi::Object search_params = info[0].As<Napi::Object>();
+
+    std::string filter = search_params.Get("filter").ToString().Utf8Value();
+    std::string base = search_params.Get("base").ToString().Utf8Value();
+
+    int32_t scope_int_value = search_params.Get("scope").As<Napi::Number>().Uint32Value();
+    SEARCH_SCOPES scope = static_cast<SEARCH_SCOPES>(scope_int_value);
+
+    AsyncSearchWorker* worker = new AsyncSearchWorker(env, this->client, filter,base, scope);
+    worker->Queue();
+    return worker->getPromise();
+}
+
 LDAP_Client::~LDAP_Client() {
     ldap_unbind_ext(this->client,NULL,NULL);
     printf("deconstructor called for ldap\n");
@@ -104,7 +121,6 @@ LDAP_Client::~LDAP_Client() {
 Napi::Value LDAP_Client::exec(const Napi::CallbackInfo& info){
     Napi::Env env = info.Env();
     
-
     int output_int = 0;
 
     int  scope = LDAP_SCOPE_SUBTREE;
