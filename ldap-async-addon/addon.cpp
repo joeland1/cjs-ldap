@@ -2,8 +2,6 @@
 #include "client.h"
 #include <ldap.h>
 
-void *__dso_handle = 0;
-
 // https://linux.die.net/man/3/ldap_url_parse
 // https://linux.die.net/man/3/ldap_init
 
