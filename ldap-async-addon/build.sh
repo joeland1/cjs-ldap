@@ -5,7 +5,7 @@ g++ -static -fPIC \
     -I/code/ldap-async-addon/node_modules/node-addon-api \
     -I/code/ldap-lib/include \
     -I/usr/include/node \
-    -std=c++23 \
+    -std=c++23 -mno-outline-atomics \
     -c -o addon.o addon.cpp || exit 1
 
 g++ -static -fPIC \
@@ -13,7 +13,7 @@ g++ -static -fPIC \
     -I/code/ldap-async-addon/node_modules/node-addon-api \
     -I/code/ldap-lib/include \
     -I/usr/include/node \
-    -std=c++23 \
+    -std=c++23 -mno-outline-atomics \
     -c -o client.o client.cpp || exit 1
 
 g++ -static -fPIC \
@@ -21,7 +21,7 @@ g++ -static -fPIC \
     -I/code/ldap-async-addon/node_modules/node-addon-api \
     -I/code/ldap-lib/include \
     -I/usr/include/node \
-    -std=c++23 \
+    -std=c++23 -mno-outline-atomics \
     -c -o async-bind-ldap.o async-bind-ldap.cpp -lldap -llber || exit 1
 
 g++ -static -fPIC \
@@ -29,8 +29,17 @@ g++ -static -fPIC \
     -I/code/ldap-async-addon/node_modules/node-addon-api \
     -I/code/ldap-lib/include \
     -I/usr/include/node \
-    -std=c++23 \
+    -std=c++23 -mno-outline-atomics \
     -c -o async-ldap-search.o async-ldap-search.cpp -lldap -llber || exit 1
+
+
+g++ -static -fPIC \
+    -I/code/ldap-async-addon/node_modules/node-api-headers/include \
+    -I/code/ldap-async-addon/node_modules/node-addon-api \
+    -I/code/ldap-lib/include \
+    -I/usr/include/node \
+    -std=c++23 -mno-outline-atomics \
+    -c -o async-ldap-close.o async-ldap-close.cpp -lldap -llber || exit 1
 
 #g++ -shared -o /code/addon.node addon.o client.o
 
@@ -41,4 +50,4 @@ g++ -static -fPIC \
 #ld -shared -static -o /code/addon.node addon.o client.o
 ld -fPIC -shared -static \
     -L/code/ldap-lib/lib \
-    -o addon.node addon.o client.o async-ldap-search.o async-bind-ldap.o -lldap -llber
+    -o addon.node addon.o client.o async-ldap-search.o async-bind-ldap.o async-ldap-close.o -lldap -llber

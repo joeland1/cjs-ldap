@@ -1,6 +1,8 @@
 #include <napi.h>
-#include "client.h"
 #include <ldap.h>
+
+#include "client.h"
+#include "search_values.h"
 
 // https://linux.die.net/man/3/ldap_url_parse
 // https://linux.die.net/man/3/ldap_init
@@ -33,6 +35,7 @@ Napi::Value create_client(const Napi::CallbackInfo& info) {
 
 Napi::Object Init (Napi::Env env, Napi::Object exports) {
     LDAP_Client::Init(env, exports);
+    CREATE_SEARCH_SCOPE_ENUM(env, exports);
     return exports;
 }
 

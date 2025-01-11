@@ -1,4 +1,6 @@
 #include <napi.h>
+#include <mutex>
+#include <atomic>
 
 extern "C" {
     #include <ldap.h>
@@ -24,17 +26,30 @@ class LDAP_client : public Napi::AsyncWorker, public Napi::ObjectWrap<LDAP_clien
         const Napi::Promise::Deferred m_deferred;
 };
 */
-class LDAP_Client : public Napi::ObjectWrap<LDAP_Client> {
-  public:
-    static Napi::Object Init(Napi::Env env, Napi::Object exports);
-    LDAP_Client(const Napi::CallbackInfo& info);
-    ~LDAP_Client();
 
-  private:
-    LDAPURLDesc client_settings;
-    LDAP* client;
-    Napi::Value exec(const Napi::CallbackInfo& info);
-    Napi::Value bind(const Napi::CallbackInfo& info);
-    Napi::Value search(const Napi::CallbackInfo& info);
-    const std::string dn;
+class LDAP_Client : public Napi::ObjectWrap<LDAP_Client> {
+    public:
+        static Napi::Object Init(Napi::Env env, Napi::Object exports);
+        enum class connection_status {
+            CLOSED,
+            OPEN,
+            BUSY,
+            CLOSING
+        };
+        LDAP_Client(const Napi::CallbackInfo& info);
+        ~LDAP_Client();
+
+    private:
+        LDAPURLDesc client_settings;
+        LDAP* client;
+        Napi::Value exec(const Napi::CallbackInfo& info);
+        Napi::Value bind(const Napi::CallbackInfo& info);
+        Napi::Value search(const Napi::CallbackInfo& info);
+        Napi::Value close(const Napi::CallbackInfo& info);
+
+        std::mutex make_request_mutex;
+        std::atomic<connection_status> connection_status = LDAP_Client::connection_status::CLOSED;
+        std::atomic<int> pending_requests = 0;
+
+        const std::string dn;
 };

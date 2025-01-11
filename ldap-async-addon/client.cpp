@@ -7,9 +7,16 @@ extern "C" {
 #include <unordered_map>
 #include <variant>
 
+#include <mutex>
+#include <atomic>
+#include <chrono>
+#include <thread>
+
 #include "client.h"
 #include "async-bind-ldap.h"
 #include "async-ldap-search.h"
+#include "async-ldap-close.h"
+#include "assert.h"
 
 LDAPURLDesc get_default_lud(){
     return {
@@ -32,6 +39,7 @@ Napi::Object LDAP_Client::Init(Napi::Env env, Napi::Object exports) {
         InstanceMethod<&LDAP_Client::exec>("exec", static_cast<napi_property_attributes>(napi_writable | napi_configurable)),
         InstanceMethod<&LDAP_Client::bind>("bind", static_cast<napi_property_attributes>(napi_writable | napi_configurable)),
         InstanceMethod<&LDAP_Client::search>("search", static_cast<napi_property_attributes>(napi_writable | napi_configurable)),
+        InstanceMethod<&LDAP_Client::close>("close", static_cast<napi_property_attributes>(napi_writable | napi_configurable)),
     });
 
     Napi::FunctionReference* constructor = new Napi::FunctionReference();
@@ -81,6 +89,7 @@ LDAP_Client::LDAP_Client(const Napi::CallbackInfo& info) : Napi::ObjectWrap<LDAP
 
 Napi::Value LDAP_Client::bind(const Napi::CallbackInfo& info){
     Napi::Env env = info.Env();
+
     Napi::Object bind_params = info[0].As<Napi::Object>();
 
     std::string dn = bind_params.Get("dn").ToString().Utf8Value();
@@ -100,6 +109,23 @@ Napi::Value LDAP_Client::bind(const Napi::CallbackInfo& info){
 
 Napi::Value LDAP_Client::search(const Napi::CallbackInfo& info){
     Napi::Env env = info.Env();
+
+    //Napi::TypeError::New(info.Env(), "error_message").ThrowAsJavaScriptException();
+    //return info.Env().Undefined();
+    
+    js_assert(env,"Connection but be opened to make a search request",[&]{
+            return (
+                this->connection_status != LDAP_Client::connection_status::CLOSED && 
+                this->connection_status != LDAP_Client::connection_status::CLOSING
+            );
+        });
+    
+
+    {
+        std::lock_guard<std::mutex> lock(this->make_request_mutex);
+        this->pending_requests++;
+    }
+
     Napi::Object search_params = info[0].As<Napi::Object>();
 
     std::string filter = search_params.Get("filter").ToString().Utf8Value();
@@ -108,13 +134,31 @@ Napi::Value LDAP_Client::search(const Napi::CallbackInfo& info){
     int32_t scope_int_value = search_params.Get("scope").As<Napi::Number>().Uint32Value();
     SEARCH_SCOPES scope = static_cast<SEARCH_SCOPES>(scope_int_value);
 
-    AsyncSearchWorker* worker = new AsyncSearchWorker(env, this->client, filter,base, scope);
+    AsyncSearchWorker* worker = new AsyncSearchWorker(env, this->client, filter,base, scope,[&]{ this->pending_requests--; this->pending_requests.notify_one(); });
+    worker->Queue();
+    return worker->getPromise();
+}
+
+Napi::Value LDAP_Client::close(const Napi::CallbackInfo& info){
+    printf("closed called\n");
+    Napi::Env env = info.Env();
+    std::lock_guard<std::mutex> lock(this->make_request_mutex);
+    this->connection_status = LDAP_Client::connection_status::CLOSING;
+    std::atomic<bool> ok_to_close = false;
+
+    while(this->pending_requests != 0){
+        this->pending_requests.wait(this->pending_requests);
+    }
+    ok_to_close = true;
+    ok_to_close.notify_one();
+
+    AsyncCloseWorker* worker = new AsyncCloseWorker(env,this->client,ok_to_close);
     worker->Queue();
     return worker->getPromise();
 }
 
 LDAP_Client::~LDAP_Client() {
-    ldap_unbind_ext(this->client,NULL,NULL);
+    //ldap_unbind_ext(this->client,NULL,NULL);
     printf("deconstructor called for ldap\n");
 }
 

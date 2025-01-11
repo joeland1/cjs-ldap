@@ -1,4 +1,6 @@
 #include <ldap.h>
+#include <atomic>
+#include <functional>
 
 enum class SEARCH_SCOPES { 
     Base = LDAP_SCOPE_BASE,
@@ -9,7 +11,7 @@ enum class SEARCH_SCOPES {
 
 class AsyncSearchWorker : public Napi::AsyncWorker {
     public:
-        AsyncSearchWorker(const Napi::Env& env, LDAP* ldap, std::string filter, std::string base, SEARCH_SCOPES scope);
+        AsyncSearchWorker(const Napi::Env& env, LDAP* ldap, std::string filter, std::string base, SEARCH_SCOPES scope, std::function<void()> func);
         ~AsyncSearchWorker();
         Napi::Promise getPromise();
 
@@ -24,4 +26,5 @@ class AsyncSearchWorker : public Napi::AsyncWorker {
         std::string filter;
         std::string base;
         SEARCH_SCOPES scope;
+        std::function<void()> once_done;
 };

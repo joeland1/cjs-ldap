@@ -33,15 +33,10 @@ void AsyncBindWorker::OnError(const Napi::Error& err){
 }
 
 void AsyncBindWorker::Execute(){
-    printf("start bind async worker\n");
 
     struct berval* servercreds = NULL;
-    printf("pw = %s\n",this->my_creds->bv_val);
-    printf("dn = %s\n",this->dn.c_str());
     int ldap_status = ldap_sasl_bind_s(this->target_ldap_client,this->dn.c_str(),LDAP_SASL_SIMPLE,this->my_creds, NULL, NULL,&servercreds);
 
-    printf("end bind async worker\n");
-    printf("error %s\n",ldap_err2string(ldap_status));
     if (ldap_status != LDAP_SUCCESS){
         printf("ldap error\n");
         this->SetError("ldap error");
