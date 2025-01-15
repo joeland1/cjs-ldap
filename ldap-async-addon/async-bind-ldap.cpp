@@ -1,5 +1,6 @@
 #include <napi.h>
 #include <ldap.h>
+#include <atomic>
 
 #include "async-bind-ldap.h"
 /*
@@ -8,11 +9,12 @@ int ldap_sasl_bind(LDAP *ld, const char *dn, const char *mechanism,
        LDAPControl *cctrls[], int *msgidp);
 */
 
-AsyncBindWorker::AsyncBindWorker(const Napi::Env& env, LDAP* ld, struct berval* cred, std::string dn): Napi::AsyncWorker(env),
+AsyncBindWorker::AsyncBindWorker(const Napi::Env& env, LDAP* ld, struct berval* cred, std::string dn, std::function<void()> onOK): Napi::AsyncWorker(env),
     m_deferred(Napi::Promise::Deferred::New(env)),
     target_ldap_client{ld},
     my_creds{ber_dupbv(NULL, cred)},
-    dn{dn}
+    dn{dn},
+    on_success_callback{onOK}
 {}
 
 AsyncBindWorker::~AsyncBindWorker(){
@@ -25,6 +27,7 @@ Napi::Promise AsyncBindWorker::getPromise(){
 
 
 void AsyncBindWorker::OnOK(){
+    this->on_success_callback();
     this->m_deferred.Resolve(Napi::Number::New(this->Env(),LDAP_SUCCESS));
 }
 

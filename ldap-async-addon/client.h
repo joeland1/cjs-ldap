@@ -1,3 +1,5 @@
+#pragma once
+
 #include <napi.h>
 #include <mutex>
 #include <atomic>
@@ -33,7 +35,6 @@ class LDAP_Client : public Napi::ObjectWrap<LDAP_Client> {
         enum class connection_status {
             CLOSED,
             OPEN,
-            BUSY,
             CLOSING
         };
         LDAP_Client(const Napi::CallbackInfo& info);

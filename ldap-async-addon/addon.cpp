@@ -35,7 +35,7 @@ Napi::Value create_client(const Napi::CallbackInfo& info) {
 
 Napi::Object Init (Napi::Env env, Napi::Object exports) {
     LDAP_Client::Init(env, exports);
-    CREATE_SEARCH_SCOPE_ENUM(env, exports);
+    exports.Set("SEARCH_SCOPES",CREATE_SEARCH_SCOPE_ENUM(env));
     return exports;
 }
 

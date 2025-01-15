@@ -2,12 +2,7 @@
 #include <atomic>
 #include <functional>
 
-enum class SEARCH_SCOPES { 
-    Base = LDAP_SCOPE_BASE,
-    One_Level = LDAP_SCOPE_ONELEVEL,
-    Subtree = LDAP_SCOPE_SUBTREE,
-    Children = LDAP_SCOPE_CHILDREN
-};
+#include "search_values.h"
 
 class AsyncSearchWorker : public Napi::AsyncWorker {
     public:

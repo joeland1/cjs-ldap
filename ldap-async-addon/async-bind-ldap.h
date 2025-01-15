@@ -1,4 +1,7 @@
 #include <napi.h>
+#include <atomic>
+
+#include "client.h"
 
 extern "C" {
     #include <ldap.h>
@@ -6,7 +9,7 @@ extern "C" {
 
 class AsyncBindWorker : public Napi::AsyncWorker {
     public:
-        AsyncBindWorker(const Napi::Env& env, LDAP* ldap, struct berval* cred, std::string dn);
+        AsyncBindWorker(const Napi::Env& env, LDAP* ldap, struct berval* cred, std::string dn, std::function<void()> onOK);
         ~AsyncBindWorker();
         Napi::Promise getPromise();
 
@@ -21,4 +24,5 @@ class AsyncBindWorker : public Napi::AsyncWorker {
         std::string dn;
         int ldap_status_code;
         struct berval* my_creds;
+        std::function<void()> on_success_callback;
 };

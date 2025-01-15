@@ -3,12 +3,16 @@
 console.log('running')
 
 const { LDAP, SEARCH_SCOPES } = require("./ldap-async-addon");
-console.log("search scopes",SEARCH_SCOPES)
 
 async function doSomething() {
     const ldap_config = {
         uri: "ldaps://localhost:1636",
         dn: "cn=admin,dc=example,dc=org",
+    }
+
+    const bind_params = {
+        dn: "cn=admin,dc=example,dc=org",
+        password: "adminpassword"
     }
 
     const search_params = {
@@ -17,8 +21,17 @@ async function doSomething() {
         base: "dc=example,dc=org",
     }
 
-    const c = new LDAP(ldap_config)
-    c.search(search_params)
+    const client = new LDAP(ldap_config)
+    const bind_result = await client.bind(bind_params);
+    const search_result = await client.search(search_params);
+    client.search(search_params);
+    client.search(search_params);
+    client.search(search_params);
+    client.search(search_params);
+    client.search(search_params);
+    client.search(search_params);
+    
+    client.close()
 
     return true
 }
