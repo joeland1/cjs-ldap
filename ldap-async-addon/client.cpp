@@ -109,30 +109,8 @@ Napi::Value LDAP_Client::bind(const Napi::CallbackInfo& info){
     std::function<void()> mark_connection_as_open = [&](){
         this->connection_status = LDAP_Client::connection_status::OPEN;
     };
-    //ldap_sasl_bind_s(this->client,dn.c_str(),LDAP_SASL_SIMPLE,&cred, NULL, NULL,&servercreds);
-    AsyncBindWorker* worker = new AsyncBindWorker(env, this->client,pw, dn, mark_connection_as_open);
-    
-    /*
-    std::function<void()> bind_function = [&,dn,pw](){
-        printf("lambda\n");
-        struct berval* servercreds = NULL;
-        
-        struct berval cred;
 
-        //make a copy so underlying isnt modified
-        char pw_char_array[pw.length() + 1];
-        strcpy(pw_char_array,pw.c_str());
-        cred.bv_val = pw_char_array;
-
-        cred.bv_len = pw.length();
-
-        ldap_sasl_bind_s(this->client,dn.c_str(),LDAP_SASL_SIMPLE,&cred, NULL, NULL,&servercreds);
-        this->connection_status = LDAP_Client::connection_status::OPEN;
-    };
-
-    GenericAsyncWorker* worker = new GenericAsyncWorker(env,bind_function);
-    */
-    
+    AsyncBindWorker* worker = new AsyncBindWorker(env, this->client,pw, dn, mark_connection_as_open);    
 
     worker->Queue();
     return worker->getPromise();
