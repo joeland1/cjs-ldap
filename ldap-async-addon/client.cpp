@@ -22,6 +22,7 @@ extern "C" {
 #include "async-ldap-search.h"
 #include "async-ldap-close.h"
 #include "assert.h"
+#include "generic-async.h"
 
 LDAPURLDesc get_default_lud(){
     return {
@@ -68,8 +69,7 @@ Napi::Object LDAP_Client::Init(Napi::Env env, Napi::Object exports) {
     return exports;
 }
 
-LDAP_Client::LDAP_Client(const Napi::CallbackInfo& info) : Napi::ObjectWrap<LDAP_Client>(info),
-    dn{info[0].As<Napi::Object>().Get("dn").ToString().Utf8Value()}
+LDAP_Client::LDAP_Client(const Napi::CallbackInfo& info) : Napi::ObjectWrap<LDAP_Client>(info)
 {
     Napi::Env env = info.Env();
 
@@ -103,16 +103,36 @@ Napi::Value LDAP_Client::bind(const Napi::CallbackInfo& info){
     js_assert(env,"password must be string",assert_object_key<Napi::String>(bind_params,"password") );
     std::string dn = bind_params.Get("dn").ToString().Utf8Value();
     std::string pw = bind_params.Get("password").ToString().Utf8Value();
+    printf("pw = %s\n",pw.c_str());
 
-    struct berval cred;
-    cred.bv_val = pw.data();
-    cred.bv_len = strlen(cred.bv_val);
-
+    
     std::function<void()> mark_connection_as_open = [&](){
         this->connection_status = LDAP_Client::connection_status::OPEN;
     };
     //ldap_sasl_bind_s(this->client,dn.c_str(),LDAP_SASL_SIMPLE,&cred, NULL, NULL,&servercreds);
-    AsyncBindWorker* worker = new AsyncBindWorker(env, this->client,&cred, dn, mark_connection_as_open);
+    AsyncBindWorker* worker = new AsyncBindWorker(env, this->client,pw, dn, mark_connection_as_open);
+    
+    /*
+    std::function<void()> bind_function = [&,dn,pw](){
+        printf("lambda\n");
+        struct berval* servercreds = NULL;
+        
+        struct berval cred;
+
+        //make a copy so underlying isnt modified
+        char pw_char_array[pw.length() + 1];
+        strcpy(pw_char_array,pw.c_str());
+        cred.bv_val = pw_char_array;
+
+        cred.bv_len = pw.length();
+
+        ldap_sasl_bind_s(this->client,dn.c_str(),LDAP_SASL_SIMPLE,&cred, NULL, NULL,&servercreds);
+        this->connection_status = LDAP_Client::connection_status::OPEN;
+    };
+
+    GenericAsyncWorker* worker = new GenericAsyncWorker(env,bind_function);
+    */
+    
 
     worker->Queue();
     return worker->getPromise();
@@ -169,14 +189,23 @@ Napi::Value LDAP_Client::close(const Napi::CallbackInfo& info){
         this->connection_status = LDAP_Client::connection_status::CLOSED;
     };
 
+    std::function<void()> mark_close_ldap = [&](){
+        this->connection_status = LDAP_Client::connection_status::CLOSED;
+    };
+
+    std::function<void()> close_ldap = [&](){
+        ldap_unbind_ext_s(this->client,NULL,NULL);
+    };
+
     AsyncCloseWorker* worker = new AsyncCloseWorker(env,this->client,this->pending_requests, set_ldap_client_status);
+    //GenericAsyncWorker* worker = new GenericAsyncWorker(env,close_ldap);
     worker->Queue();
     return worker->getPromise();
 }
 
 LDAP_Client::~LDAP_Client() {
     //ldap_unbind_ext(this->client,NULL,NULL);
-    printf("deconstructor called for ldap\n");
+    //printf("deconstructor called for ldap\n");
 }
 
 Napi::Value LDAP_Client::exec(const Napi::CallbackInfo& info){
@@ -210,10 +239,14 @@ int ldap_search_ext_s(
               LDAPMessage **res );
 
 */
-    int status3 = ldap_search_ext_s(this->client, "dc=example,dc=org", scope, filter,attributes, attributes_only, NULL, NULL, &timeout, -1, &answer);
+    struct berval* servercreds = NULL;
+    struct berval cred;
+    cred.bv_val = "adminpassword";
+    cred.bv_len = strlen(cred.bv_val);
 
-    LDAPMessage* entry;
-    
+
+    int ldap_status = ldap_sasl_bind_s(this->client,"dn=admin,dc=example,dc=org",LDAP_SASL_SIMPLE,&cred, NULL, NULL,&servercreds);
+
     std::unordered_map<
         std::string,
         std::unordered_map<
@@ -224,19 +257,15 @@ int ldap_search_ext_s(
             >
         >
     > return_map;
-
     /*
-    {
-        "dn": {
-            "attribute": ["v1","v2"]
-            "dn": "dn"
-        }
-    }
-    */
+    int status3 = ldap_search_ext_s(this->client, "dc=example,dc=org", scope, filter,attributes, attributes_only, NULL, NULL, &timeout, -1, &answer);
+
+    LDAPMessage* entry;
+    
 
     for ( entry = ldap_first_entry(this->client, answer); entry != NULL; entry = ldap_next_entry(this->client, entry)) {
 
-        /* Print the DN string of the object */
+        // Print the DN string of the object 
         char* dn = ldap_get_dn(this->client, entry);
 
         printf("Found Object: %s\n", dn);
@@ -268,7 +297,7 @@ int ldap_search_ext_s(
             dn_entry[attribute] = attribute_values;
 
             ldap_value_free_len(ber_arr);
-            free(attribute);
+            ldap_memfree(attribute);
         }
 
         return_map[dn] = dn_entry;
@@ -276,6 +305,10 @@ int ldap_search_ext_s(
         ldap_memfree(dn);
     }
     ldap_msgfree(answer);
+    ldap_unbind_ext(this->client,NULL,NULL);
+    */
+
+    ldap_unbind_ext(this->client,NULL,NULL);
 
     Napi::Object ldap_response_obj = Napi::Object::New(env);
 

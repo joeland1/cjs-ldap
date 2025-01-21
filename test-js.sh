@@ -3,5 +3,5 @@ rm /code/ldap-async-addon/addon.node
 
 (cd "/code/ldap-async-addon" && ./build.sh ) || exit 1
 
-#valgrind --leak-check=full node /code/index.js
-node /code/index.js
+valgrind --leak-check=full --track-origins=yes node /code/index.js
+#node /code/index.js

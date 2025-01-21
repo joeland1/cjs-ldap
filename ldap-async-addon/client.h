@@ -51,6 +51,4 @@ class LDAP_Client : public Napi::ObjectWrap<LDAP_Client> {
         std::mutex make_request_mutex;
         std::atomic<connection_status> connection_status = LDAP_Client::connection_status::CLOSED;
         std::atomic<int> pending_requests = 0;
-
-        const std::string dn;
 };

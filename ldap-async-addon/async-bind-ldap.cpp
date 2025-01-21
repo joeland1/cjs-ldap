@@ -9,16 +9,15 @@ int ldap_sasl_bind(LDAP *ld, const char *dn, const char *mechanism,
        LDAPControl *cctrls[], int *msgidp);
 */
 
-AsyncBindWorker::AsyncBindWorker(const Napi::Env& env, LDAP* ld, struct berval* cred, std::string dn, std::function<void()> onOK): Napi::AsyncWorker(env),
+AsyncBindWorker::AsyncBindWorker(const Napi::Env& env, LDAP*& ld, std::string cred, std::string dn, std::function<void()> onOK): Napi::AsyncWorker(env),
     m_deferred(Napi::Promise::Deferred::New(env)),
     target_ldap_client{ld},
-    my_creds{ber_dupbv(NULL, cred)},
+    my_creds{cred},
     dn{dn},
     on_success_callback{onOK}
 {}
 
 AsyncBindWorker::~AsyncBindWorker(){
-    ber_bvfree(this->my_creds);
 }
 
 Napi::Promise AsyncBindWorker::getPromise(){
@@ -38,10 +37,16 @@ void AsyncBindWorker::OnError(const Napi::Error& err){
 void AsyncBindWorker::Execute(){
 
     struct berval* servercreds = NULL;
-    int ldap_status = ldap_sasl_bind_s(this->target_ldap_client,this->dn.c_str(),LDAP_SASL_SIMPLE,this->my_creds, NULL, NULL,&servercreds);
+
+    struct berval cred;
+    cred.bv_val = this->my_creds.data();
+    cred.bv_len = strlen(cred.bv_val);
+
+    int ldap_status = ldap_sasl_bind_s(this->target_ldap_client,this->dn.c_str(),LDAP_SASL_SIMPLE,&cred, NULL, NULL,&servercreds);
+    ber_bvfree(servercreds);
 
     if (ldap_status != LDAP_SUCCESS){
-        printf("ldap error\n");
+        printf("ldap error %s\n",ldap_err2string(ldap_status));
         this->SetError("ldap error");
         return;
     }
