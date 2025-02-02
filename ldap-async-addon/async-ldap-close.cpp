@@ -2,6 +2,7 @@
 #include <ldap.h>
 #include <atomic>
 
+#include "client.h"
 #include "async-ldap-close.h"
 /*
 int ldap_sasl_bind(LDAP *ld, const char *dn, const char *mechanism,
@@ -9,14 +10,15 @@ int ldap_sasl_bind(LDAP *ld, const char *dn, const char *mechanism,
        LDAPControl *cctrls[], int *msgidp);
 */
 
-AsyncCloseWorker::AsyncCloseWorker(const Napi::Env& env, LDAP*& ld, std::atomic<int>& requests_left, std::function<void()> on_close): Napi::AsyncWorker(env),
+AsyncCloseWorker::AsyncCloseWorker(const Napi::Env& env, LDAP*& ld, std::atomic<int>& requests_left, std::atomic<LDAP_Client::status>& ldap_client_status ): Napi::AsyncWorker(env),
     m_deferred(Napi::Promise::Deferred::New(env)),
     target_ldap_client{ld},
     requests_left{requests_left},
-    on_close{on_close}
+    ldap_client_status{ldap_client_status}
 {}
 
 AsyncCloseWorker::~AsyncCloseWorker(){
+    printf("async close deconstructor called\n");
 }
 
 Napi::Promise AsyncCloseWorker::getPromise(){
@@ -25,7 +27,6 @@ Napi::Promise AsyncCloseWorker::getPromise(){
 
 
 void AsyncCloseWorker::OnOK(){
-    this->on_close();
     this->m_deferred.Resolve(Napi::Number::New(this->Env(),LDAP_SUCCESS));
 }
 
@@ -38,8 +39,8 @@ void AsyncCloseWorker::Execute(){
         this->requests_left.wait(this->requests_left);
     }
 
-    int ldap_status = ldap_unbind_ext(this->target_ldap_client,NULL,NULL);
-    printf("ldap status: %s\n",ldap_err2string(ldap_status));
+    int ldap_status = ldap_unbind_ext_s(this->target_ldap_client,NULL,NULL);
+    printf("ldap unbind status: %s\n",ldap_err2string(ldap_status));
 
     if (ldap_status != LDAP_SUCCESS){
         printf("ldap close error\n");

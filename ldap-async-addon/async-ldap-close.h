@@ -10,7 +10,7 @@ extern "C" {
 
 class AsyncCloseWorker : public Napi::AsyncWorker {
     public:
-        AsyncCloseWorker(const Napi::Env& env, LDAP*& ldap,std::atomic<int>& requests_left, std::function<void()> on_close);
+        AsyncCloseWorker(const Napi::Env& env, LDAP*& ldap,std::atomic<int>& requests_left, std::atomic<LDAP_Client::status>& ldap_client_status);
         ~AsyncCloseWorker();
         Napi::Promise getPromise();
 
@@ -20,8 +20,8 @@ class AsyncCloseWorker : public Napi::AsyncWorker {
         void OnError(const Napi::Error& err);
 
     private:
-        LDAP* target_ldap_client;
+        LDAP*& target_ldap_client;
         Napi::Promise::Deferred m_deferred;
         std::atomic<int>& requests_left;
-        std::function<void()> on_close;
+        std::atomic<LDAP_Client::status>& ldap_client_status;
 };

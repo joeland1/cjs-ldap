@@ -15,9 +15,8 @@ typedef std::unordered_map<std::string,ldap_dn_entry> ldap_response_map;
 class LDAP_Response{
     public:
         LDAP_Response(LDAP* ld, LDAPMessage* answer);
-        static void free_response(LDAP* ld, LDAPMessage* answer);
         ~LDAP_Response();
+        ldap_response_map response;
 
     private:
-        ldap_response_map response;
 };

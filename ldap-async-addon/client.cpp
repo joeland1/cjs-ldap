@@ -15,6 +15,8 @@ extern "C" {
 #include <cassert>
 
 #include "search_values.h"
+#include "tls_validation_settings.h"
+
 #include "utils.h"
 
 #include "client.h"
@@ -48,22 +50,10 @@ Napi::Object LDAP_Client::Init(Napi::Env env, Napi::Object exports) {
         InstanceMethod<&LDAP_Client::close>("close", static_cast<napi_property_attributes>(napi_writable | napi_configurable)),
     });
 
-    Napi::FunctionReference* constructor = new Napi::FunctionReference();
-
-    // Create a persistent reference to the class constructor. This will allow
-    // a function called on a class prototype and a function
-    // called on instance of a class to be distinguished from each other.
-    *constructor = Napi::Persistent(func);
     exports.Set("LDAP", func);
 
-    // Store the constructor as the add-on instance data. This will allow this
-    // add-on to support multiple instances of itself running on multiple worker
-    // threads, as well as multiple instances of itself running in different
-    // contexts on the same thread.
-    //
-    // By default, the value set on the environment here will be destroyed when
-    // the add-on is unloaded using the `delete` operator, but it is also
-    // possible to supply a custom deleter.
+    Napi::FunctionReference* constructor = new Napi::FunctionReference();
+    *constructor = Napi::Persistent(func);
     env.SetInstanceData<Napi::FunctionReference>(constructor);
 
     return exports;
@@ -80,14 +70,20 @@ LDAP_Client::LDAP_Client(const Napi::CallbackInfo& info) : Napi::ObjectWrap<LDAP
     int status = ldap_initialize(&(this->client),uri.c_str());
 
     int ldap_version = LDAP_VERSION3;
-    int tls_check = LDAP_OPT_X_TLS_ALLOW;
     ldap_set_option(this->client, LDAP_OPT_PROTOCOL_VERSION, &ldap_version);
-    ldap_set_option(this->client, LDAP_OPT_X_TLS_REQUIRE_CERT, &tls_check);
+
+    if( config_params.Has("TLS_CHECK") ){
+        TLS_CHECK ldap_opt_x_tls_require_cert = static_cast<TLS_CHECK>(extract_int(config_params,"TLS_CHECK"));
+        int v = std::to_underlying(ldap_opt_x_tls_require_cert);
+        ldap_set_option(this->client, LDAP_OPT_X_TLS_REQUIRE_CERT, &v );
+    }
+    //ldap_set_option(this->client, LDAP_OPT_X_TLS_REQUIRE_CERT, &tls_check);
+
     //ldap_set_option(this->client,LDAP_OPT_X_TLS_CACERTFILE, "/code/ldap-certs/myCA.crt");
     //ldap_set_option(this->client,LDAP_OPT_X_TLS_CERTFILE, "/code/ldap-certs/ldap.crt");
     //ldap_set_option(this->client,LDAP_OPT_X_TLS_KEYFILE, "/code/ldap-certs/ldap.key");
     
-    printf("called constructor\n");
+    printf("called client constructor\n");
 }
 
 
@@ -97,21 +93,23 @@ Napi::Value LDAP_Client::bind(const Napi::CallbackInfo& info){
     js_assert(env,"Bind input must be object",assert_type<Napi::Object>(info[0]));
     Napi::Object bind_params = info[0].As<Napi::Object>();
 
-    js_assert(env,"Connection must be closed",this->connection_status == LDAP_Client::connection_status::CLOSED );
+    //js_assert(env,"Connection must be closed",this->connection_status == LDAP_Client::connection_status::CLOSED );
 
     js_assert(env,"dn must be string",assert_object_key<Napi::String>(bind_params,"dn") );
     js_assert(env,"password must be string",assert_object_key<Napi::String>(bind_params,"password") );
     std::string dn = bind_params.Get("dn").ToString().Utf8Value();
     std::string pw = bind_params.Get("password").ToString().Utf8Value();
-    printf("pw = %s\n",pw.c_str());
 
-    
-    std::function<void()> mark_connection_as_open = [&](){
-        this->connection_status = LDAP_Client::connection_status::OPEN;
-    };
+    /*
+    struct berval* servercreds = NULL;
+    struct berval cred;
+    cred.bv_val = "adminpassword";
+    cred.bv_len = strlen(cred.bv_val);
+    int ldap_status = ldap_sasl_bind_s(this->client,"dn=admin,dc=example,dc=org",LDAP_SASL_SIMPLE,&cred, NULL, NULL,&servercreds);
+    */
 
-    AsyncBindWorker* worker = new AsyncBindWorker(env, this->client,pw, dn, mark_connection_as_open);    
-
+    //auto worker = new GenericAsyncWorker(env, bind_function);
+    AsyncBindWorker* worker = new AsyncBindWorker(env,this->client,pw,dn,this->connection_status);
     worker->Queue();
     return worker->getPromise();
 }
@@ -138,52 +136,43 @@ Napi::Value LDAP_Client::search(const Napi::CallbackInfo& info){
     js_assert(env, "base must be a string", assert_object_key<Napi::String>(search_params,"base") );
     std::string base = extract_string(search_params,"base");
 
+    js_assert(env, "attributes is array", assert_object_key<Napi::Array>(search_params,"attributes"));
+    Napi::Array attribute_arr = search_params.Get("attributes").As<Napi::Array>();
+
+    //std::string single_attribute_string = extract_string(attribute_arr,0);
+    std::vector<std::string> attarr = std::vector<std::string>(attribute_arr.Length()+1);
+    for(int i=0;i<attarr.size();i++)
+        attarr[i] = extract_string(attribute_arr,i);
+
     {
         std::lock_guard<std::mutex> lock(this->make_request_mutex);
-        js_assert(env,"Connection but be opened to make a search request",this->connection_status == LDAP_Client::connection_status::OPEN );
+        js_assert(env,"Connection but be opened to make a search request",this->connection_status == LDAP_Client::status::OPEN );
         this->pending_requests++;
     }
 
-    std::function<void()> decrement_on_finish = [&](){
-        this->pending_requests--;
-        this->pending_requests.notify_one();
-    };
-
-    AsyncSearchWorker* worker = new AsyncSearchWorker(env, this->client, filter,base, scope,decrement_on_finish);
+    AsyncSearchWorker* worker = new AsyncSearchWorker(env, this->client, filter,base, scope, this->pending_requests, attarr);
     worker->Queue();
     return worker->getPromise();
 }
 
 Napi::Value LDAP_Client::close(const Napi::CallbackInfo& info){
-    printf("closed called\n");
+    //printf("closed called\n");
     Napi::Env env = info.Env();
 
     {
         std::lock_guard<std::mutex> lock(this->make_request_mutex);
-        this->connection_status = LDAP_Client::connection_status::CLOSING;
+        this->connection_status = LDAP_Client::status::CLOSING;
     }
 
-    std::function<void()> set_ldap_client_status = [&](){
-        this->connection_status = LDAP_Client::connection_status::CLOSED;
-    };
+    AsyncCloseWorker* worker = new AsyncCloseWorker(env,this->client,this->pending_requests, this->connection_status);
 
-    std::function<void()> mark_close_ldap = [&](){
-        this->connection_status = LDAP_Client::connection_status::CLOSED;
-    };
-
-    std::function<void()> close_ldap = [&](){
-        ldap_unbind_ext_s(this->client,NULL,NULL);
-    };
-
-    AsyncCloseWorker* worker = new AsyncCloseWorker(env,this->client,this->pending_requests, set_ldap_client_status);
-    //GenericAsyncWorker* worker = new GenericAsyncWorker(env,close_ldap);
     worker->Queue();
     return worker->getPromise();
 }
 
 LDAP_Client::~LDAP_Client() {
-    //ldap_unbind_ext(this->client,NULL,NULL);
-    //printf("deconstructor called for ldap\n");
+    //ldap_unbind_ext_s(this->client,NULL,NULL);
+    printf("JAHSFKLJAHLKSFJHLKASJHFKL\n");
 }
 
 Napi::Value LDAP_Client::exec(const Napi::CallbackInfo& info){

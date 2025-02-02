@@ -12,7 +12,7 @@ LDAP_Response::LDAP_Response(LDAP* ld, LDAPMessage* ans){
 
         ldap_dn_entry dn_entry;
         
-        dn_entry["dn"] = std::string(dn);
+        //dn_entry["dn"] = std::string(dn);
 
         //printf("Found Object: %s\n", dn);
         BerElement *ber;
@@ -41,10 +41,6 @@ LDAP_Response::LDAP_Response(LDAP* ld, LDAPMessage* ans){
     }
 
     this->response = final_map;
-    ldap_msgfree(ans);
-}
-
-void LDAP_Response::free_response(LDAP* ld, LDAPMessage* ans){
 }
 
 LDAP_Response::~LDAP_Response(){

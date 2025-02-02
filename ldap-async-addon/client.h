@@ -32,7 +32,7 @@ class LDAP_client : public Napi::AsyncWorker, public Napi::ObjectWrap<LDAP_clien
 class LDAP_Client : public Napi::ObjectWrap<LDAP_Client> {
     public:
         static Napi::Object Init(Napi::Env env, Napi::Object exports);
-        enum class connection_status {
+        enum class status {
             CLOSED,
             OPEN,
             CLOSING
@@ -41,14 +41,16 @@ class LDAP_Client : public Napi::ObjectWrap<LDAP_Client> {
         ~LDAP_Client();
 
     private:
+        static Napi::FunctionReference constructor;
         LDAPURLDesc client_settings;
         LDAP* client;
         Napi::Value exec(const Napi::CallbackInfo& info);
         Napi::Value bind(const Napi::CallbackInfo& info);
         Napi::Value search(const Napi::CallbackInfo& info);
         Napi::Value close(const Napi::CallbackInfo& info);
+        Napi::Value str(const Napi::CallbackInfo& info);
 
         std::mutex make_request_mutex;
-        std::atomic<connection_status> connection_status = LDAP_Client::connection_status::CLOSED;
+        std::atomic<status> connection_status = LDAP_Client::status::CLOSED;
         std::atomic<int> pending_requests = 0;
 };

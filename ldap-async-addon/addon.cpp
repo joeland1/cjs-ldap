@@ -3,7 +3,8 @@
 
 #include "client.h"
 #include "search_values.h"
-
+#include "ldap-result-obj.h"
+#include "tls_validation_settings.h"
 // https://linux.die.net/man/3/ldap_url_parse
 // https://linux.die.net/man/3/ldap_init
 
@@ -35,7 +36,9 @@ Napi::Value create_client(const Napi::CallbackInfo& info) {
 
 Napi::Object Init (Napi::Env env, Napi::Object exports) {
     LDAP_Client::Init(env, exports);
+    JS_LDAP_Response::Init(env,exports);
     exports.Set("SEARCH_SCOPES",CREATE_SEARCH_SCOPE_ENUM(env));
+    exports.Set("TLS_CHECK",CREATE_TLS_CHECK_ENUM(env));
     return exports;
 }
 

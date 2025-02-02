@@ -10,7 +10,7 @@ enum class SEARCH_SCOPES {
     Children = LDAP_SCOPE_CHILDREN
 };
 
-static Napi::PropertyDescriptor create_read_only_int(Napi::Env env, std::string key, SEARCH_SCOPES value);
+//static Napi::PropertyDescriptor create_read_only_int(Napi::Env env, std::string key, SEARCH_SCOPES value);
 
 Napi::Object CREATE_SEARCH_SCOPE_ENUM(Napi::Env env);
 

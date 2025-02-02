@@ -9,7 +9,7 @@ extern "C" {
 
 class AsyncBindWorker : public Napi::AsyncWorker {
     public:
-        AsyncBindWorker(const Napi::Env& env, LDAP*& ldap, std::string cred, std::string dn, std::function<void()> onOK);
+        AsyncBindWorker(const Napi::Env& env, LDAP*& ldap, std::string cred, std::string dn, std::atomic<LDAP_Client::status>& connection_status);
         ~AsyncBindWorker();
         Napi::Promise getPromise();
 
@@ -24,5 +24,5 @@ class AsyncBindWorker : public Napi::AsyncWorker {
         std::string dn;
         int ldap_status_code;
         std::string my_creds;
-        std::function<void()> on_success_callback;
+        std::atomic<LDAP_Client::status>& conn;
 };
