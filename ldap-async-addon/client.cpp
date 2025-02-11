@@ -24,7 +24,6 @@ extern "C" {
 #include "async-ldap-search.h"
 #include "async-ldap-close.h"
 #include "assert.h"
-#include "generic-async.h"
 
 LDAPURLDesc get_default_lud(){
     return {
