@@ -13,10 +13,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: |
-          ls  \
-          sh <(curl -L https://nixos.org/nix/install) --no-daemon  \
-          nix --version
+      - run: ls
+      - run: sh <(curl -L https://nixos.org/nix/install) --no-daemon
+      - run: nix --version
+      - run: nix-build build/plugin.nix
+      
   publish-npm:
     needs: build
     runs-on: ubuntu-latest
