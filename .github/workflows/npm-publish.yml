@@ -14,10 +14,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: |
-              ls  \
-              sh <(curl -L https://nixos.org/nix/install) --no-daemon  \
-              nix --version
-
+          ls  \
+          sh <(curl -L https://nixos.org/nix/install) --no-daemon  \
+          nix --version
   publish-npm:
     needs: build
     runs-on: ubuntu-latest
