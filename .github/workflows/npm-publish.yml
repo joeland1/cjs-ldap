@@ -18,7 +18,7 @@ jobs:
       - run: . /home/runner/.nix-profile/etc/profile.d/nix.sh && nix-build build/plugin.nix
       - uses: actions/upload-artifact@v4.6.0
         with:
-          name: "result"
+          name: result
           path: build/result
       
   publish-npm:
@@ -32,7 +32,7 @@ jobs:
       - run: ls
       - uses: actions/download-artifact@v4.1.8
         with:
-          name: "result"
+          name: result
       - run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{secrets.npm_token}}
