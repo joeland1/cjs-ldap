@@ -56,7 +56,7 @@ pkgs.stdenv.mkDerivation {
         LDAP_INCLUDE_PATH=${ldap}/include
         LDAP_LIB_PATH=${ldap}/lib
 
-        GPP_FLAGS="-I$NODE_INCLUDE_PATH -I$NAPI_INCLUDE_PATH -I$LDAP_INCLUDE_PATH -static -fPIC -std=c++23 -mno-outline-atomics -c"
+        GPP_FLAGS="-I$NODE_INCLUDE_PATH -I$NAPI_INCLUDE_PATH -I$LDAP_INCLUDE_PATH -static -fPIC -std=c++23 -outline-atomics -c"
         GPP_FLAGS="$GPP_FLAGS" ./build.sh
         ls
     '';
