@@ -16,17 +16,23 @@ jobs:
       - run: ls
       - run: sh <(curl -L https://nixos.org/nix/install) --no-daemon
       - run: . /home/runner/.nix-profile/etc/profile.d/nix.sh && nix-build build/plugin.nix
+      - uses: actions/upload-artifact@v4.6.0
+        with:
+          name: "result"
+          path: build/result
       
   publish-npm:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 20
           registry-url: https://registry.npmjs.org/
-      - run: npm ci
+      - run: ls
+      - uses: actions/download-artifact@v4.1.8
+        with:
+          name: "result"
       - run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{secrets.npm_token}}
