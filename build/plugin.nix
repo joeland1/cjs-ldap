@@ -14,26 +14,6 @@ let
     ]);
 in
 
-let 
-
-    all_files = pkgs.lib.lists.flatten [
-        "index.js"
-        "build.sh"
-        "addon.cpp"
-        "utils.h"
-        "assert.h"
-        (cpp_h_pair "client")
-        (cpp_h_pair "async-bind-ldap")
-        (cpp_h_pair "async-ldap-search")
-        (cpp_h_pair "async-ldap-close")
-        (cpp_h_pair "ldap-result")
-        (cpp_h_pair "ldap-result-obj")
-        (cpp_h_pair "search_values")
-        (cpp_h_pair "tls_validation_settings")
-    ];
-
-in
-
 pkgs.stdenv.mkDerivation {
 
     name = "cjs-ldap";
@@ -47,7 +27,22 @@ pkgs.stdenv.mkDerivation {
 
     src = fs.toSource {
         root = ./../ldap-async-addon;
-        fileset = fs.unions (map (x: ./. + "./../ldap-async-addon/${x}" ) all_files);
+        fileset = fs.unions (map (x: ./. + "./../ldap-async-addon/${x}" ) (pkgs.lib.lists.flatten [
+                "index.js"
+                "package.json"
+                "build.sh"
+                "addon.cpp"
+                "utils.h"
+                "assert.h"
+                (cpp_h_pair "client")
+                (cpp_h_pair "async-bind-ldap")
+                (cpp_h_pair "async-ldap-search")
+                (cpp_h_pair "async-ldap-close")
+                (cpp_h_pair "ldap-result")
+                (cpp_h_pair "ldap-result-obj")
+                (cpp_h_pair "search_values")
+                (cpp_h_pair "tls_validation_settings")
+            ]));
     };
 
     buildPhase = ''
@@ -64,6 +59,7 @@ pkgs.stdenv.mkDerivation {
         mkdir $out
         cp addon.node $out
         cp index.js $out
+        cp package.json $out
     '';
 
 }

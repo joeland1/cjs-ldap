@@ -1,6 +1,22 @@
 {
-  "name": "c+js LDAP",
-  "dependencies": {
-    "node-addon-api": "^8.0.0"
-  }
+  "name": "cjsldap",
+  "version": "0.0.1",
+  "description": "A LDAP library for NodeJS written in C++ using OpenLDAP",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/joeland1/cjs-ldap.git"
+  },
+  "keywords": [
+    "ldap"
+  ],
+  "author": "joe_land1",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/joeland1/cjs-ldap/issues"
+  },
+  "homepage": "https://github.com/joeland1/cjs-ldap#readme"
 }
