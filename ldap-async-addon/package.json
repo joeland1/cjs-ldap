@@ -1,6 +1,6 @@
 {
   "name": "cjsldap",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "A LDAP library for NodeJS written in C++ using OpenLDAP",
   "main": "index.js",
   "scripts": {
