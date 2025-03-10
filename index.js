@@ -2,7 +2,7 @@
 
 console.log('running')
 
-const { LDAP, SEARCH_SCOPES, TLS_CHECK } = require("./ldap-async-addon");
+const { LDAP, SEARCH_SCOPES, TLS_CHECK } = require("./cjs-ldap");
 
 console.log(TLS_CHECK)
 

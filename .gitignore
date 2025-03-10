@@ -9,3 +9,4 @@ openssl-lib
 openssl-openssl-3.4.0
 ldap-lib-no-ssl
 result
+cjs-ldap/*

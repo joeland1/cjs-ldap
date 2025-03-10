@@ -1,15 +1,14 @@
 { 
     nixpkgs ? fetchTarball "https://github.com/NixOS/nixpkgs/tarball/nixos-unstable",
-    target ? false,
     version ? "3.4.0"
 }:
 
 let
     # x86_64-unknown-linux-gnu - amd/intel 64 bit cpu linux
     # aarch64-linux-gnu - arm 64 bit cpu linux
-    # x86_64-w64-mingw32 - amd/inte 64 bit cpu windows
+    # x86_64-w64-mingw32 - amd/intel 64 bit cpu windows
 
-    pkgs_cross = if builtins.isString target then import nixpkgs { crossSystem = { config = target; }; } else import nixpkgs { };
+    pkgs_cross = import nixpkgs { crossSystem = { config = "x86_64-w64-mingw32"; };};
     pkgs_native = import nixpkgs { };
 in
 
@@ -19,7 +18,7 @@ pkgs_cross.stdenv.mkDerivation {
     version = version;
 
     src = pkgs_native.fetchurl {
-        url = "https://github.com/openssl/openssl/releases/download/${version}/openssl-${version}.tar.gz";
+        url = "https://github.com/openssl/openssl/releases/download/openssl-${version}/openssl-${version}.tar.gz";
         sha256 = "4V3agv4v6BOdwqwho21MoB1TE8dfmfRsTooncJtylL8=";
         curlOpts = "-L";               #follow redirects cuz github 302
     };

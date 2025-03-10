@@ -1,13 +1,13 @@
 { 
     nixpkgs ? fetchTarball "https://github.com/NixOS/nixpkgs/tarball/nixos-23.11",
-    target ? builtins.currentSystem
+    version ? "2.5.19"
 }:
 
 let
 
-    pkgs_cross = if builtins.isString target then import nixpkgs { crossSystem = { config = target; }; } else import nixpkgs { };
+    pkgs_cross = import nixpkgs { crossSystem = { config = "aarch64-unknown-linux-gnu"; }; };
     pkgs_native = import nixpkgs { };
-    openssl_static = import ./openssl/import.nix { target = target; };
+    openssl_static = import ../openssl/import.nix { target = "aarch64-unknown-linux-gnu"; };
 in
 
 pkgs_cross.stdenv.mkDerivation {
@@ -21,7 +21,7 @@ pkgs_cross.stdenv.mkDerivation {
     };
 
     buildInputs = [
-        pkgs_cross.openssl { static = true }
+        openssl_static
     ];
 
     nativeBuildInputs = [

@@ -1,23 +1,35 @@
 { 
-    pkgs ? import (fetchTarball "https://github.com/NixOS/nixpkgs/tarball/nixos-23.11"){}
+    nixpkgs ? fetchTarball "https://github.com/NixOS/nixpkgs/tarball/nixos-23.11",
+    target ? builtins.currentSystem,
+    version ? "unknown"
 }:
 
-let
-    fs = pkgs.lib.fileset;
-    napi = import ./node-addon.nix { };
-    ldap = import ./openldap.nix {};
-    node = pkgs.nodejs_21;
 
-    cpp_h_pair = fname: pkgs.lib.lists.flatten ([
-        (pkgs.lib.concatStrings [ fname ".h" ] )
-        (pkgs.lib.concatStrings [ fname ".cpp"] )
+let
+    tgt = 
+        if          builtins.elem target [ "aarch64-linux"  "aarch64-unknown-linux-gnu"   ] then "aarch64-unknown-linux-gnu"
+        else if     builtins.elem target [ "x86_86-linux"   "x86_64-unknown-linux-gnu"    ] then "x86_64-unknown-linux-gnu"
+        else if     builtins.elem target [ "x86_64-windows" "x86_64-w64-mingw32"          ] then "x86_64-w64-mingw32"
+        else abort "invalid target";
+
+    pkgs_native = import nixpkgs {};
+    pkgs_cross = import nixpkgs { crossSystem = { config = tgt; }; };
+
+    fs   = pkgs_native.lib.fileset;
+    napi = import ./node-addon.nix { };
+    ldap = import ./openldap/import.nix { target = tgt; };
+    node = pkgs_native.nodejs_21;
+
+    cpp_h_pair = fname: pkgs_native.lib.lists.flatten ([
+        (pkgs_native.lib.concatStrings [ fname ".h" ] )
+        (pkgs_native.lib.concatStrings [ fname ".cpp"] )
     ]);
 in
 
-pkgs.stdenv.mkDerivation {
+pkgs_cross.stdenv.mkDerivation {
 
     name = "cjs-ldap";
-    version = "0.0.1";
+    version = version;
 
     buildInputs = [
         napi
@@ -27,7 +39,7 @@ pkgs.stdenv.mkDerivation {
 
     src = fs.toSource {
         root = ./../ldap-async-addon;
-        fileset = fs.unions (map (x: ./. + "./../ldap-async-addon/${x}" ) (pkgs.lib.lists.flatten [
+        fileset = fs.unions (map (x: ./. + "./../ldap-async-addon/${x}" ) (pkgs_native.lib.lists.flatten [
                 "index.js"
                 "package.json"
                 "build.sh"
@@ -50,10 +62,15 @@ pkgs.stdenv.mkDerivation {
         NAPI_INCLUDE_PATH=${napi}
         LDAP_INCLUDE_PATH=${ldap}/include
         LDAP_LIB_PATH=${ldap}/lib
-
         GPP_FLAGS="-I$NODE_INCLUDE_PATH -I$NAPI_INCLUDE_PATH -I$LDAP_INCLUDE_PATH -static -fPIC -std=c++23 -outline-atomics -c"
-        GPP_FLAGS="$GPP_FLAGS" ./build.sh
-        ls
+
+        # for some reason need to directly specify the ld and g++ even though they should be symlinked already via the stdenv
+        LD_BIN="$LD" \
+        GPP_BIN="$CXX" \
+        GPP_FLAGS="$GPP_FLAGS" \
+        LDAP_LIB="${ldap}/lib" \
+        GPP_FLAGS="$GPP_FLAGS" \
+            ./build.sh
     '';
     installPhase = ''
         mkdir $out

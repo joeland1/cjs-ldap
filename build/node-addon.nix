@@ -2,9 +2,6 @@
     pkgs ? import (fetchTarball "https://github.com/NixOS/nixpkgs/tarball/nixos-23.11"){},
 }:
 
-let
-    openssl_static = import ./openssl.nix { };
-in
 pkgs.stdenv.mkDerivation {
 
     name = "node-addon-api";
