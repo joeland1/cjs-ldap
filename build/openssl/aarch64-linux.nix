@@ -1,5 +1,5 @@
 { 
-    nixpkgs ? fetchTarball "https://github.com/NixOS/nixpkgs/tarball/nixos-unstable",
+    nixpkgs ? fetchTarball "https://github.com/NixOS/nixpkgs/tarball/nixos-23.11",
     version ? "3.4.0"
 }:
 
@@ -24,14 +24,14 @@ pkgs_cross.stdenv.mkDerivation {
         curlOpts = "-L";               #follow redirects cuz github 302
     };
 
-    nativeBuildInputs = [
+    buildInputs = [
         pkgs_native.perl
     ];
 
 
     unpackPhase = "tar -xzf $src";
     sourceRoot = "./openssl-${version}";
-    configurePhase = "CFLAGS='-fPIC -pie -DPIC ' ./Configure --prefix=$out linux-aarch64 && perl configdata.pm --dump";
+    configurePhase = "./Configure --prefix=$out linux-aarch64 -no-shared && perl configdata.pm --dump";
     buildPhase = "make -j$(nproc)";
     installPhase = "make install";
 }

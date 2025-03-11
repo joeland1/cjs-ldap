@@ -1,23 +1,17 @@
 { 
     nixpkgs ? fetchTarball "https://github.com/NixOS/nixpkgs/tarball/nixos-23.11",
-    target ? builtins.currentSystem,
     version ? "unknown"
 }:
 
 
 let
-    tgt = 
-        if          builtins.elem target [ "aarch64-linux"  "aarch64-unknown-linux-gnu"   ] then "aarch64-unknown-linux-gnu"
-        else if     builtins.elem target [ "x86_86-linux"   "x86_64-unknown-linux-gnu"    ] then "x86_64-unknown-linux-gnu"
-        else if     builtins.elem target [ "x86_64-windows" "x86_64-w64-mingw32"          ] then "x86_64-w64-mingw32"
-        else abort "invalid target";
 
     pkgs_native = import nixpkgs {};
-    pkgs_cross = import nixpkgs { crossSystem = { config = tgt; }; };
+    pkgs_cross = import nixpkgs { crossSystem = { config = "x86_64-unknown-linux-gnu"; }; };
 
     fs   = pkgs_native.lib.fileset;
-    napi = import ./node-addon.nix { };
-    ldap = import ./openldap/import.nix { target = tgt; };
+    napi = import ../node-addon.nix { };
+    ldap = import ../openldap/import.nix { target = "x86_64-unknown-linux-gnu" ; };
     node = pkgs_native.nodejs_21;
 
     cpp_h_pair = fname: pkgs_native.lib.lists.flatten ([
@@ -38,8 +32,8 @@ pkgs_cross.stdenv.mkDerivation {
     ];
 
     src = fs.toSource {
-        root = ./../ldap-async-addon;
-        fileset = fs.unions (map (x: ./. + "./../ldap-async-addon/${x}" ) (pkgs_native.lib.lists.flatten [
+        root = ./../../ldap-async-addon;
+        fileset = fs.unions (map (x: ./. + "./../../ldap-async-addon/${x}" ) (pkgs_native.lib.lists.flatten [
                 "index.js"
                 "package.json"
                 "build.sh"
