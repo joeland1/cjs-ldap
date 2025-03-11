@@ -31,11 +31,12 @@ pkgs_cross.stdenv.mkDerivation {
     unpackPhase = "tar -xzf $src";
     sourceRoot = "./openldap-2.5.19";
     configurePhase = ''
-        CFLAGS='-fPIC -pie -DPIC -I${openssl_static}/include -L${openssl_static}/lib -static-libgcc -static-libstdc++'   \
-        CPPFLAGS='-I${openssl_static}/include -L${openssl_static}/lib'                  \
-        LDFLAGS='-I/${openssl_static}/include -L${openssl_static}/lib'                  \
-        ./configure \
-            ac_cv_func_memcmp_working=yes # need this to cross compile on x86_64 \
+
+        CFLAGS='-fPIC -pie -DPIC -I${openssl_static}/include -L${openssl_static}/lib -static-libgcc -static-libstdc++'  \
+        CPPFLAGS='-I${openssl_static}/include -L${openssl_static}/lib'                                                  \
+        LDFLAGS='-I/${openssl_static}/include -L${openssl_static}/lib'                                                  \
+        ./configure                                                                                                     \
+            ac_cv_func_memcmp_working=yes                                                                               \
             --prefix=$out --enable-static --with-gnu-ld --host=aarch64-unknown-linux-gnu --with-yielding_select=yes
 
     '';
