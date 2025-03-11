@@ -24,7 +24,7 @@ pkgs_cross.stdenv.mkDerivation {
         curlOpts = "-L";               #follow redirects cuz github 302
     };
 
-    buildInputs = [
+    nativeBuildInputs = [
         pkgs_native.perl
     ];
 
