@@ -34,7 +34,10 @@ pkgs_cross.stdenv.mkDerivation {
         CFLAGS='-fPIC -pie -DPIC -I${openssl_static}/include -L${openssl_static}/lib -static-libgcc -static-libstdc++'   \
         CPPFLAGS='-I${openssl_static}/include -L${openssl_static}/lib'                  \
         LDFLAGS='-I/${openssl_static}/include -L${openssl_static}/lib'                  \
-        ./configure --prefix=$out --enable-static --with-gnu-ld --host=aarch64-unknown-linux-gnu --with-yielding_select=yes
+        ./configure \
+            ac_cv_func_memcmp_working=yes # need this to cross compile on x86_64 \
+            --prefix=$out --enable-static --with-gnu-ld --host=aarch64-unknown-linux-gnu --with-yielding_select=yes
+
     '';
     buildPhase = "make -j$(nproc)";
     installPhase = "make install";
