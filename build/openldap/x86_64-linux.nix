@@ -31,6 +31,8 @@ pkgs_cross.stdenv.mkDerivation {
     unpackPhase = "tar -xzf $src";
     sourceRoot = "./openldap-2.5.19";
     configurePhase = ''
+        echo "./configure --prefix=$out --host=x86_64-unknown-linux-gnu --enable-static --with-gnu-ld"
+        
         CFLAGS='-fPIC -pie -DPIC -I${openssl_static}/include -L${openssl_static}/lib -static-libgcc -static-libstdc++'   \
         CPPFLAGS='-I${openssl_static}/include -L${openssl_static}/lib'                  \
         LDFLAGS='-I/${openssl_static}/include -L${openssl_static}/lib'                  \
