@@ -38,7 +38,7 @@ pkgs.stdenv.mkDerivation {
         
         cp index.js $out
         cp package.json package.tmp
-        jq '.version = ${version} ' package.tmp > $out/package.json
+        jq '.version = "${version}"' package.tmp > $out/package.json
     '';
 
 }
