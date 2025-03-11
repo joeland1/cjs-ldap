@@ -34,7 +34,7 @@ pkgs_cross.stdenv.mkDerivation {
         CFLAGS='-fPIC -pie -DPIC -I${openssl_static}/include -L${openssl_static}/lib'   \
         CPPFLAGS='-I${openssl_static}/include -L${openssl_static}/lib'                  \
         LDFLAGS='-I/${openssl_static}/include -L${openssl_static}/lib'                  \
-        ./configure --prefix=$out --enable-static --with-gnu-ld
+        ./configure --prefix=$out --enable-static --with-gnu-ld --host=aarch64-unknown-linux-gnu
     '';
     buildPhase = "make -j$(nproc)";
     installPhase = "make install";
