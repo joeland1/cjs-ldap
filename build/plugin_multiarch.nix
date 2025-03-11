@@ -19,6 +19,7 @@ pkgs.stdenv.mkDerivation {
     buildInputs = [
         aarch64
         x86_64
+        pkgs.jq
     ];
 
     src = fs.toSource {
@@ -36,7 +37,8 @@ pkgs.stdenv.mkDerivation {
         cp ${x86_64}/addon.node $out/prebuilt/linux_amd64.node
         
         cp index.js $out
-        cp package.json $out
+        cp package.json package.tmp
+        jq '.version = ${version} ' package.tmp > $out/package.json
     '';
 
 }
