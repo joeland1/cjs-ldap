@@ -56,7 +56,7 @@ pkgs_cross.stdenv.mkDerivation {
         NAPI_INCLUDE_PATH=${napi}
         LDAP_INCLUDE_PATH=${ldap}/include
         LDAP_LIB_PATH=${ldap}/lib
-        GPP_FLAGS="-I$NODE_INCLUDE_PATH -I$NAPI_INCLUDE_PATH -I$LDAP_INCLUDE_PATH -static -fPIC -std=c++23 -fno-inline-atomics -latomic -c"
+        GPP_FLAGS="-I$NODE_INCLUDE_PATH -I$NAPI_INCLUDE_PATH -I$LDAP_INCLUDE_PATH -static -fPIC -std=c++23 -latomic -c"
 
         # for some reason need to directly specify the ld and g++ even though they should be symlinked already via the stdenv
         GPP_FLAGS="$GPP_FLAGS" ./build.sh
