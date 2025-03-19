@@ -41,7 +41,7 @@ void AsyncCloseWorker::Execute(){
     }
 
     int ldap_status = ldap_unbind_ext_s(this->target_ldap_client,NULL,NULL);
-    printf("ldap unbind status: %s\n",ldap_err2string(ldap_status));
+    debug_log("ldap unbind status: %s\n",ldap_err2string(ldap_status));
 
     if (ldap_status != LDAP_SUCCESS){
         debug_log("ldap close error\n");
