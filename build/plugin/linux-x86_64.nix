@@ -40,6 +40,7 @@ pkgs_cross.stdenv.mkDerivation {
                 "addon.cpp"
                 "utils.h"
                 "assert.h"
+                "log.h"
                 (cpp_h_pair "client")
                 (cpp_h_pair "async-bind-ldap")
                 (cpp_h_pair "async-ldap-search")

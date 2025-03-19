@@ -24,6 +24,7 @@ extern "C" {
 #include "async-ldap-search.h"
 #include "async-ldap-close.h"
 #include "assert.h"
+#include "log.h"
 
 LDAPURLDesc get_default_lud(){
     return {
@@ -82,7 +83,7 @@ LDAP_Client::LDAP_Client(const Napi::CallbackInfo& info) : Napi::ObjectWrap<LDAP
     //ldap_set_option(this->client,LDAP_OPT_X_TLS_CERTFILE, "/code/ldap-certs/ldap.crt");
     //ldap_set_option(this->client,LDAP_OPT_X_TLS_KEYFILE, "/code/ldap-certs/ldap.key");
     
-    printf("called client constructor\n");
+    debug_log("test\n");
 }
 
 
@@ -171,7 +172,7 @@ Napi::Value LDAP_Client::close(const Napi::CallbackInfo& info){
 
 LDAP_Client::~LDAP_Client() {
     //ldap_unbind_ext_s(this->client,NULL,NULL);
-    printf("JAHSFKLJAHLKSFJHLKASJHFKL\n");
+    //printf("JAHSFKLJAHLKSFJHLKASJHFKL\n");
 }
 
 Napi::Value LDAP_Client::exec(const Napi::CallbackInfo& info){

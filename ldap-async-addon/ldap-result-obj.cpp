@@ -4,11 +4,11 @@
 #include "ldap-result.h"
 
 JS_LDAP_Response::JS_LDAP_Response(const Napi::CallbackInfo& info): Napi::ObjectWrap<JS_LDAP_Response>(info){
-    printf("created ldap js response\n");
+    //printf("created ldap js response\n");
 }
 
 JS_LDAP_Response::~JS_LDAP_Response(){
-    printf("deleted js resonse\n");
+    //printf("deleted js resonse\n");
 }
 
 Napi::Value JS_LDAP_Response::toObject(const Napi::CallbackInfo& info){

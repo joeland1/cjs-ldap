@@ -7,8 +7,8 @@ const { LDAP, SEARCH_SCOPES, TLS_CHECK } = require("./cjs-ldap");
 console.log(TLS_CHECK)
 
 const ldap_config_tls = {
-    uri: "ldaps://localhost:1636",
-    TLS_CHECK: TLS_CHECK.allow
+    uri: "ldap://localhost:1389",
+    //TLS_CHECK: TLS_CHECK.allow
 }
 
 const bind_params = {
@@ -33,7 +33,7 @@ async function doSomething() {
 }
 
 (async () => {
-    const MAX = 1
+    const MAX = 5
     for(let i=0;i<MAX;i++)
         await doSomething();
     process.exit(0)
@@ -46,11 +46,5 @@ function sleep(ms) {
     setTimeout(resolve, ms);
 });
 }
-
-(async () => {
-  await fetch('http://localhost:8080')
-  
-})();
-
 
 console.log('should go up top');

@@ -4,6 +4,7 @@
 
 #include "async-bind-ldap.h"
 #include "client.h"
+#include "log.h"
 /*
 int ldap_sasl_bind(LDAP *ld, const char *dn, const char *mechanism,
        struct berval *cred, LDAPControl *sctrls[],
@@ -43,8 +44,8 @@ void AsyncBindWorker::Execute(){
     int ldap_status = ldap_sasl_bind_s(this->target_ldap_client,this->dn.c_str(),LDAP_SASL_SIMPLE,&creds, NULL, NULL,&servercreds);
 
     if (ldap_status != LDAP_SUCCESS){
-        printf("ldap error bind %s\n",ldap_err2string(ldap_status));
-        this->SetError("ldap error");
+        debug_log("ldap error bind %s\n",ldap_err2string(ldap_status));
+        this->SetError(ldap_err2string(ldap_status));
         return;
     }
     this->conn = LDAP_Client::status::OPEN;

@@ -44,5 +44,5 @@ LDAP_Response::LDAP_Response(LDAP* ld, LDAPMessage* ans){
 }
 
 LDAP_Response::~LDAP_Response(){
-    printf("ldap response destructor\n");
+    //printf("ldap response destructor\n");
 }

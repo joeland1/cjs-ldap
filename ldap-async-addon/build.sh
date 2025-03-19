@@ -4,7 +4,7 @@ LD_BIN="${LD_BIN:-${LD_BIN_DEFAULT}}"
 GPP_BIN_DEFAULT="$CXX"
 GPP_BIN="${GPP_BIN:-${GPP_BIN_DEFAULT}}"
 
-GPP_FLAGS_DEFAULT="-fPIC -pie -DPIC
+GPP_FLAGS_DEFAULT="-fPIC -pie -DPIC -DLOGGING_ENABLED=1
     -I/code/ldap-async-addon/node_modules/node-addon-api 
     -I/code/ldap-lib/include 
     -I/usr/local/include/node 

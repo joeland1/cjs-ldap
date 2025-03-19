@@ -4,6 +4,7 @@
 
 #include "client.h"
 #include "async-ldap-close.h"
+#include "log.h"
 /*
 int ldap_sasl_bind(LDAP *ld, const char *dn, const char *mechanism,
        struct berval *cred, LDAPControl *sctrls[],
@@ -18,7 +19,7 @@ AsyncCloseWorker::AsyncCloseWorker(const Napi::Env& env, LDAP*& ld, std::atomic<
 {}
 
 AsyncCloseWorker::~AsyncCloseWorker(){
-    printf("async close deconstructor called\n");
+    debug_log("async close deconstructor called\n");
 }
 
 Napi::Promise AsyncCloseWorker::getPromise(){
@@ -43,8 +44,8 @@ void AsyncCloseWorker::Execute(){
     printf("ldap unbind status: %s\n",ldap_err2string(ldap_status));
 
     if (ldap_status != LDAP_SUCCESS){
-        printf("ldap close error\n");
-        this->SetError("ldap error");
+        debug_log("ldap close error\n");
+        this->SetError(ldap_err2string(ldap_status));
         return;
     }
 }
